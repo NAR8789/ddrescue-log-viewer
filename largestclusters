@@ -3,9 +3,6 @@
 var fs = require('fs');
 var logParser = require('./logParser');
 
-var rows = process.argv[3] || Math.floor(process.stdout.rows/2);
-var granules = rows * process.stdout.columns;
-
 fs.readFile(process.argv[2], 'utf8', function(err, data) {
     if (err) {
         return console.log(err);
@@ -15,8 +12,8 @@ fs.readFile(process.argv[2], 'utf8', function(err, data) {
     var logEntries = log.entries;
 
     var GiB = 1024 * 1024 * 1024;
-    var begin = 130 * GiB;
-    var end = 150 * GiB;
+    var begin = process.argv[3] * GiB;
+    var end = process.argv[4] * GiB;
 
     logEntries
         .filter(function(entry) {
