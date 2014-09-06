@@ -183,7 +183,8 @@ var legendLine = function(step) {
     // log(x) + 0.5 <= k <= log(x) + 1.5
     // (log(x) + 1) - 0.5 <= k <= (log(x) + 1) + 0.5
     // k = round(log(x) + 1)     (= (log(x) + 1) + r, for some rounding factor r satisfying -0.5 <= r <= 0.5)
-    var scale = Math.pow(10, Math.round(Math.log(step)/Math.log(10)) + 1);
+    var decimalMagnitude = Math.round(Math.log(step)/Math.log(10)) + 1;
+    var scale = Math.pow(2, Math.floor(decimalMagnitude / 3) * 10) * Math.pow(10,decimalMagnitude % 3);
     var legend = filesize(scale).human();
 
     var result = legend + ": ";
