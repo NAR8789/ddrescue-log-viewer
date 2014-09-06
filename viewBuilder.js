@@ -36,4 +36,15 @@ var linearVisual = function(log, granules) {
     return logString;
 };
 
+var sizeSummary = function(log) {
+    return log.entries.reduce(function(sizeSummary, entry) {
+        if (!(entry.flag in sizeSummary)) {
+            sizeSummary[entry.flag] = 0;
+        }
+        sizeSummary[entry.flag] += entry.size;
+        return sizeSummary;
+    }, {});
+};
+
 module.exports.linearVisual = linearVisual;
+module.exports.sizeSummary = sizeSummary

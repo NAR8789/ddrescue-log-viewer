@@ -24,13 +24,7 @@ fs.readFile(process.argv[2], 'utf8', function(err, data) {
     var logEntries = log.entries;
     var totalSize = log.totalSize;
 
-    var sizeBreakdown = logEntries.reduce(function(sizeBreakdown, logEntry) {
-        if (!(logEntry.flag in sizeBreakdown)) {
-            sizeBreakdown[logEntry.flag] = 0;
-        }
-        sizeBreakdown[logEntry.flag] += logEntry.size;
-        return sizeBreakdown;
-    }, {});
+    var sizeBreakdown = viewBuilder.sizeSummary(log);
 
     var logString = viewBuilder.linearVisual(log, granules);
     var step = totalSize/granules;
