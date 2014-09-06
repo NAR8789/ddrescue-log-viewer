@@ -5,7 +5,7 @@ var filesize = require('filesize');
 var logParser = require('./logParser');
 var viewBuilder = require('./viewBuilder');
 
-var rows = process.argv[3];
+var rows = process.argv[3] || Math.floor(process.stdout.rows/2);
 var granules = rows * process.stdout.columns;
 
 fs.readFile(process.argv[2], 'utf8', function(err, data) {
