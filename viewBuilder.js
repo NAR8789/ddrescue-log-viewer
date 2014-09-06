@@ -1,64 +1,172 @@
 var filesize = require('filesize');
 
-var linearVisual = function(log, granules) {
-    var entries = log.entries;
-    var totalSize = log.totalSize;
+/**
+ * Given a log, produces metadata about which entries should be printed
+ */
+var linearVisualMetadata = (function() {
+    var buildEntry = function(printPos, logEntry) {
+        var entry = function Entry() {};
 
-    var granulePos = 0;
-    // we calculate samplePos from granulePos, in order to avoid float error
-    var samplePos = function() {
-        return (granulePos / granules) * totalSize;
-    };
-    var logString = "";
-    var nonPrintedEntries = 0;
-    var nonPrintedOffset = 0;   // ogod, waaat? erm... see the logic for this in the middle of the loop
-    for (i = 0; i < entries.length ;i++) {
-        var entry = entries[i];
-        var entryPrinted = false;
-        var entryString = "";
-        while (samplePos() < entry.begin) {
-            entryString += "w";
-            granulePos += 1;
-            entryPrinted = true;
+        entry.printPos = printPos;
+        entry.logEntry = logEntry;
+        entry.printLength = 0;
+        entry.printed = function() {
+            return entry.printLength > 0;
         }
-        var end = entry.begin + entry.size
-        while (samplePos() < end) {
-            entryString += entry.flag;
-            granulePos += 1;
-            entryPrinted = true;
+        entry.endPos = function() {
+            return entry.printPos + Math.max(0,entry.printLength - 1);
         }
+        entry.flag = function() {
+            return entry.logEntry ? logEntry.flag : "w";
+        }
+        entry.toString = (function() {
+            var memoString = undefined;
 
-        if (!entryPrinted) {
-            nonPrintedEntries += 1;
-        } else {
-            if (nonPrintedEntries > 0) {
-                var nonPrintedEntriesToken = "[" + nonPrintedEntries + "]";
-
-                // To retain output length, the nonPrintedEntriesToken will "cover" other tokens.
-                var coveredLength = nonPrintedEntriesToken.length - nonPrintedOffset;
-                var entryLength = entryString.length;
-                if (entryString.length <= coveredLength) {
-                    // Count entry as non-printed.
-                    nonPrintedEntries += 1;
-                    // Do not print entry string.
-                    entryString = "";
-                    // Even though the string wasn't printed, we need to retain its output offset.
-                    // In a sense we want to print it "under" the nonprinting flag.
-                    nonPrintedOffset += entryLength;
-                } else {
-                    // Truncate entry string.
-                    entryString = nonPrintedEntriesToken + entryString.slice(coveredLength);
-                    // Reset non-printed state.
-                    nonPrintedEntries = 0;
-                    nonPrintedOffset = 0;
+            return function() {
+                if (typeof memoString !== "string") {
+                    memoString = "";
+                    var flag = entry.flag();
+                    for(var i = 0; i < entry.printLength; i++) {
+                        memoString += flag;
+                    }
                 }
+
+                return memoString;
+            };
+        }());
+
+        return entry;
+    };
+
+    return function(log, granules) {
+        var logEntries = log.entries;
+        var totalSize = log.totalSize;
+
+        var granulePos = 0;
+        // we calculate samplePos from granulePos, in order to avoid float error
+        var samplePos = function() {
+            return (granulePos / granules) * totalSize;
+        };
+        var metadata = [];
+        for (i = 0; i < logEntries.length ;i++) {
+            var logEntry = logEntries[i];
+
+            // handle gaps in the logfile
+            var entry = buildEntry(granulePos);
+            while (samplePos() < logEntry.begin) {
+                granulePos += 1;
+                entry.printLength += 1;
             }
+            if (entry.printed()) {
+                metadata.push(entry);
+            }
+
+            // handle the meat of the logEntry
+            entry = buildEntry(granulePos, logEntry);
+            var end = logEntry.begin + logEntry.size
+            while (samplePos() < end) {
+                granulePos += 1;
+                entry.printLength += 1;
+            }
+            metadata.push(entry);
         }
 
-        logString += entryString;
-    }
+        return metadata;
+    };
+}());
 
-    return logString;
+/**
+ * Given a linearVisual metadata log, produce a map of clusters of nonprinted entries, mapped by print position
+ */
+var linearVisualNonprinted = function(data) {
+    return data
+        .filter(function(datum) {
+            return !datum.printed();
+        })
+        .reduce(function(nonPrints, datum, index) {
+            if (typeof nonPrints[datum.printPos] === "undefined") {
+                nonPrints[datum.printPos] = [];
+            }
+            nonPrints[datum.printPos].push(datum);
+            return nonPrints;
+        }, []);
+};
+
+/**
+ * Given a linearVisual metadata log, produce a map of clusters of nonprinted entries, mapped by print position
+ *
+ * This version takes into account occlusion
+ */
+var linearVisualNonprinted2 = function(data) {
+    return data
+        .reduce(function(state, datum, index) {
+            var nonPrints = state.nonPrints;
+            var occlusion = state.occlusion;
+
+            // check for occlusion
+            var occluded = false;
+            var printPos = datum.printPos;
+            if (typeof occlusion !== "undefined" && datum.endPos() < occlusion.end) {
+                occluded = true;
+                printPos = occlusion.printPos;
+            } else {
+                occlusion = undefined;
+                state.occlusion = undefined;
+            }
+
+            // ignore visible markers
+            if (datum.printed() && !occluded) {
+                return state;
+            }
+
+            // update nonPrints
+            if (typeof nonPrints[printPos] === "undefined") {
+                nonPrints[printPos] = [];
+            }
+            nonPrints[printPos].push(datum);
+
+            // update occlusion
+            if (typeof occlusion === "undefined") {
+                occlusion = {
+                    printPos: printPos,
+                };
+                state.occlusion = occlusion;
+            }
+            occlusion.end = printPos + ("[" + nonPrints[printPos].length + "]").length;
+
+            return state;
+        }, {nonPrints: []}).nonPrints;
+};
+
+/**
+ * Given a linearVisual metadata log, produce a string for console printing
+ */
+var linearVisualString = function(data) {
+    return data
+        .filter(function(datum) {
+            return datum.printed();
+        })
+        .reduce(function(printString, datum) {
+            return printString + datum.toString();
+        }, "");
+};
+
+/**
+ * given a linearVisual metadata log, produce a string for console printing, decorated with nonprinted cluster markers
+ */
+var linearVisualDecoratedString = function(data) {
+    return linearVisualNonprinted2(data)
+        .reduce(function(output, datum, printLocation) {
+            var marker = "[" + datum.length + "]";
+            return output.slice(0,printLocation) + marker + output.slice(printLocation + marker.length);
+        }, linearVisualString(data));
+}
+
+/**
+ * Given a linearVisual metadata log, print it to console
+ */
+var linearVisual = function(log, granules) {
+    return linearVisualDecoratedString(linearVisualMetadata(log, granules));
 };
 
 var legendLine = function(step) {
