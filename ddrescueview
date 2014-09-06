@@ -22,7 +22,8 @@ fs.readFile(process.argv[2], 'utf8', function(err, data) {
     var logString = viewBuilder.linearVisual(log, granules);
     var step = totalSize/granules;
 
-    console.log("granule size is " + filesize(step));
+    console.log("granule size:\t" + filesize(step));
+    console.log("row size:\t" + filesize(step * process.stdout.columns));
     console.log(viewBuilder.legendLine(step));
     for (var flag in sizeBreakdown) {
         console.log(flag + ": " + filesize(sizeBreakdown[flag]));
