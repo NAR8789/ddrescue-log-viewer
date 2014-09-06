@@ -4,23 +4,26 @@ var linearVisual = function(log, granules) {
     var entries = log.entries;
     var totalSize = log.totalSize;
 
-    var samplePos = 0;
-    var step = totalSize/granules;
+    var granulePos = 0;
+    // we calculate samplePos from granulePos, in order to avoid float error
+    var samplePos = function() {
+        return (granulePos / granules) * totalSize;
+    };
     var logString = "";
     var nonPrintedEntries = 0;
     for (i = 0; i < entries.length ;i++) {
         var entry = entries[i];
         var entryPrinted = false;
         var entryString = "";
-        while (samplePos < entry.begin) {
+        while (samplePos() < entry.begin) {
             entryString += "w";
-            samplePos += step;
+            granulePos += 1;
             entryPrinted = true;
         }
         var end = entry.begin + entry.size
-        while (samplePos < end) {
+        while (samplePos() < end) {
             entryString += entry.flag;
-            samplePos += step;
+            granulePos += 1;
             entryPrinted = true;
         }
 
