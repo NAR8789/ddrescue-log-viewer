@@ -1,3 +1,5 @@
+#!/usr/bin/nodejs
+
 var fs = require('fs');
 
 var granules = process.argv[3];
@@ -13,6 +15,7 @@ var legendLine = function(step, size, legend) {
 fs.readFile(process.argv[2], 'utf8', function(err, data) {
     var lines = data.split('\n');
     var log = [];
+    var sizeBreakdown = {};
     var totalSize = 0;
 
     for ( var i = 0; i < lines.length; i++) {
@@ -26,6 +29,10 @@ fs.readFile(process.argv[2], 'utf8', function(err, data) {
             };
             log.push(logEntry);
             totalSize += logEntry.size;
+            if (!(logEntry.flag in sizeBreakdown)) {
+                sizeBreakdown[logEntry.flag] = 0;
+            }
+            sizeBreakdown[logEntry.flag] += logEntry.size;
         }
     }
 
@@ -62,5 +69,8 @@ fs.readFile(process.argv[2], 'utf8', function(err, data) {
 
     console.log("granule size is " + step);
     console.log(legendLine(step, 1024 * 1024 * 1024, "GiB"));
+    for (var flag in sizeBreakdown) {
+        console.log(flag + ": " + sizeBreakdown[flag]);
+    }
     console.log(logString);
 });
