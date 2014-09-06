@@ -1,4 +1,4 @@
-var filesize = require('filesize');
+var filesize = require('file-size');
 
 /**
  * Given a log, produces metadata about which entries should be printed
@@ -184,7 +184,7 @@ var legendLine = function(step) {
     // (log(x) + 1) - 0.5 <= k <= (log(x) + 1) + 0.5
     // k = round(log(x) + 1)     (= (log(x) + 1) + r, for some rounding factor r satisfying -0.5 <= r <= 0.5)
     var scale = Math.pow(10, Math.round(Math.log(step)/Math.log(10)) + 1);
-    var legend = filesize(scale);
+    var legend = filesize(scale).human();
 
     var result = legend + ": ";
     for (var i = 0; i < Math.round(scale/step); i++) {
