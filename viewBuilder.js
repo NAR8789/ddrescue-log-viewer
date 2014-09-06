@@ -11,6 +11,7 @@ var linearVisual = function(log, granules) {
     };
     var logString = "";
     var nonPrintedEntries = 0;
+    var nonPrintedOffset = 0;   // ogod, waaat? erm... see the logic for this in the middle of the loop
     for (i = 0; i < entries.length ;i++) {
         var entry = entries[i];
         var entryPrinted = false;
@@ -31,9 +32,27 @@ var linearVisual = function(log, granules) {
             nonPrintedEntries += 1;
         } else {
             if (nonPrintedEntries > 0) {
-                entryString = "[" + nonPrintedEntries + "]" + entryString;
+                var nonPrintedEntriesToken = "[" + nonPrintedEntries + "]";
+
+                // To retain output length, the nonPrintedEntriesToken will "cover" other tokens.
+                var coveredLength = nonPrintedEntriesToken.length - nonPrintedOffset;
+                var entryLength = entryString.length;
+                if (entryString.length <= coveredLength) {
+                    // Count entry as non-printed.
+                    nonPrintedEntries += 1;
+                    // Do not print entry string.
+                    entryString = "";
+                    // Even though the string wasn't printed, we need to retain its output offset.
+                    // In a sense we want to print it "under" the nonprinting flag.
+                    nonPrintedOffset += entryLength;
+                } else {
+                    // Truncate entry string.
+                    entryString = nonPrintedEntriesToken + entryString.slice(coveredLength);
+                    // Reset non-printed state.
+                    nonPrintedEntries = 0;
+                    nonPrintedOffset = 0;
+                }
             }
-            nonPrintedEntries = 0;
         }
 
         logString += entryString;
