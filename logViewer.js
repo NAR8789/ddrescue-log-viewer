@@ -1,6 +1,7 @@
 #!/usr/bin/nodejs
 
 var fs = require('fs');
+var logParser = require('./logParser');
 
 var granules = process.argv[3];
 
@@ -13,28 +14,23 @@ var legendLine = function(step, size, legend) {
 }
 
 fs.readFile(process.argv[2], 'utf8', function(err, data) {
-    var lines = data.split('\n');
-    var log = [];
-    var sizeBreakdown = {};
-    var totalSize = 0;
-
-    for ( var i = 0; i < lines.length; i++) {
-        var line = lines[i];
-        var tokens = line.split(/\s+/);
-        if (tokens.length == 3 && tokens[0] !== "#" ) {
-            var logEntry = {
-                begin: +tokens[0],
-                size: +tokens[1],
-                flag: tokens[2]
-            };
-            log.push(logEntry);
-            totalSize += logEntry.size;
-            if (!(logEntry.flag in sizeBreakdown)) {
-                sizeBreakdown[logEntry.flag] = 0;
-            }
-            sizeBreakdown[logEntry.flag] += logEntry.size;
-        }
+    if (err) {
+        return console.log(err);
     }
+
+    var log = logParser.readString(data);
+
+    var totalSize = log.reduce(function(totalSize, logEntry) {
+        return totalSize + logEntry.size;
+    }, 0);
+
+    var sizeBreakdown = log.reduce(function(sizeBreakdown, logEntry) {
+        if (!(logEntry.flag in sizeBreakdown)) {
+            sizeBreakdown[logEntry.flag] = 0;
+        }
+        sizeBreakdown[logEntry.flag] += logEntry.size;
+        return sizeBreakdown;
+    }, {});
 
     var samplePos = 0;
     var step = totalSize/granules;
