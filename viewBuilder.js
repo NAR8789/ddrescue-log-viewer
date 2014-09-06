@@ -1,3 +1,5 @@
+var filesize = require('filesize');
+
 var linearVisual = function(log, granules) {
     var entries = log.entries;
     var totalSize = log.totalSize;
@@ -36,6 +38,22 @@ var linearVisual = function(log, granules) {
     return logString;
 };
 
+var legendLine = function(step) {
+    // want something bigger than the individual step, probably seeking sizing between... sqrt(10)x and 10sqrt(10)x. 
+    // x10^0.5 <= 10^k <= x10^1.5
+    // log(x) + 0.5 <= k <= log(x) + 1.5
+    // (log(x) + 1) - 0.5 <= k <= (log(x) + 1) + 0.5
+    // k = round(log(x) + 1)     (= (log(x) + 1) + r, for some rounding factor r satisfying -0.5 <= r <= 0.5)
+    var scale = Math.pow(10, Math.round(Math.log(step)/Math.log(10) + 1));
+    var legend = filesize(scale);
+
+    var result = legend + ": ";
+    for (var i = 0; i < Math.round(scale/step); i++) {
+        result += "-";
+    }
+    return result;
+}
+
 var sizeSummary = function(log) {
     return log.entries.reduce(function(sizeSummary, entry) {
         if (!(entry.flag in sizeSummary)) {
@@ -47,4 +65,5 @@ var sizeSummary = function(log) {
 };
 
 module.exports.linearVisual = linearVisual;
-module.exports.sizeSummary = sizeSummary
+module.exports.sizeSummary = sizeSummary;
+module.exports.legendLine = legendLine;

@@ -7,14 +7,6 @@ var viewBuilder = require('./viewBuilder');
 
 var granules = process.argv[3];
 
-var legendLine = function(step, size, legend) {
-    var result = legend + ":\t";
-    for (var i = 0; i < Math.round(size/step); i++) {
-        result += "-";
-    }
-    return result;
-}
-
 fs.readFile(process.argv[2], 'utf8', function(err, data) {
     if (err) {
         return console.log(err);
@@ -30,7 +22,7 @@ fs.readFile(process.argv[2], 'utf8', function(err, data) {
     var step = totalSize/granules;
 
     console.log("granule size is " + filesize(step));
-    console.log(legendLine(step, 1024 * 1024 * 1024, "GiB"));
+    console.log(viewBuilder.legendLine(step));
     for (var flag in sizeBreakdown) {
         console.log(flag + ": " + filesize(sizeBreakdown[flag]));
     }
