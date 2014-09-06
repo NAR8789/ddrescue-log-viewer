@@ -4,7 +4,8 @@ var readLine = function(line) {
         return {
             begin: +tokens[0],
             size: +tokens[1],
-            flag: tokens[2]
+            flag: tokens[2],
+            raw: line
         };
     } else {
         return null;

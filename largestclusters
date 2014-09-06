@@ -1,0 +1,31 @@
+#!/usr/bin/nodejs
+
+var fs = require('fs');
+var logParser = require('./logParser');
+
+var rows = process.argv[3] || Math.floor(process.stdout.rows/2);
+var granules = rows * process.stdout.columns;
+
+fs.readFile(process.argv[2], 'utf8', function(err, data) {
+    if (err) {
+        return console.log(err);
+    }
+
+    var log = logParser.readString(data);
+    var logEntries = log.entries;
+
+    var GiB = 1024 * 1024 * 1024;
+    var begin = 130 * GiB;
+    var end = 150 * GiB;
+
+    logEntries
+        .filter(function(entry) {
+            return entry.flag !== "+" && entry.begin >= begin && entry.begin <= end;
+        })
+        .sort(function(left, right) {
+            return right.size - left.size || left.begin - right.begin;
+        })
+        .forEach(function(entry) {
+            console.log(entry.raw);
+        });
+});
