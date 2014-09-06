@@ -20,12 +20,10 @@ fs.readFile(process.argv[2], 'utf8', function(err, data) {
     }
 
     var log = logParser.readString(data);
+    var logEntries = log.entries;
+    var totalSize = log.totalSize;
 
-    var totalSize = log.reduce(function(totalSize, logEntry) {
-        return totalSize + logEntry.size;
-    }, 0);
-
-    var sizeBreakdown = log.reduce(function(sizeBreakdown, logEntry) {
+    var sizeBreakdown = logEntries.reduce(function(sizeBreakdown, logEntry) {
         if (!(logEntry.flag in sizeBreakdown)) {
             sizeBreakdown[logEntry.flag] = 0;
         }
@@ -37,8 +35,8 @@ fs.readFile(process.argv[2], 'utf8', function(err, data) {
     var step = totalSize/granules;
     var logString = "";
     var nonPrintedEntries = 0;
-    for (i = 0; i < log.length ;i++) {
-        var logEntry = log[i];
+    for (i = 0; i < logEntries.length ;i++) {
+        var logEntry = logEntries[i];
         var entryPrinted = false;
         while (samplePos < logEntry.begin) {
             logString += "w";

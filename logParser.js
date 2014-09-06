@@ -12,12 +12,20 @@ var readLine = function(line) {
 };
 
 var readString = function(file) {
-    return file
+    var entries = file
         .split('\n')
         .map(readLine)
         .filter(function(entry) {
             return (typeof entry === 'object' && entry !== null);
         });
+    var totalSize = entries.reduce(function(totalSize, entry) {
+        return totalSize + entry.size;
+    }, 0);
+
+    return {
+        entries: entries,
+        totalSize: totalSize
+    };
 }
 
 module.exports.readString = readString;
