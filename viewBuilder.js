@@ -29,10 +29,6 @@ var linearVisual = function(log, granules) {
         } else {
             if (nonPrintedEntries > 0) {
                 entryString = "[" + nonPrintedEntries + "]" + entryString;
-            } else {
-                if (i > 0) {
-                    entryString = "," + entryString;
-                }
             }
             nonPrintedEntries = 0;
         }
