@@ -97,7 +97,7 @@ var linearVisualNonprinted = function(data) {
  *
  * This version takes into account occlusion
  */
-var linearVisualNonprinted2 = function(data) {
+var linearVisualNonprinted2 = function(data, occlusionOf) {
     return data
         .reduce(function(state, datum, index) {
             var nonPrints = state.nonPrints;
@@ -132,7 +132,7 @@ var linearVisualNonprinted2 = function(data) {
                 };
                 state.occlusion = occlusion;
             }
-            occlusion.end = printPos + ("[" + nonPrints[printPos].length + "]").length;
+            occlusion.end = printPos + occlusionOf(nonPrints[printPos]);
 
             return state;
         }, {nonPrints: []}).nonPrints;
@@ -151,13 +151,21 @@ var linearVisualString = function(data) {
         }, "");
 };
 
+var nonPrintingClusterMarker = function(nonPrintingCluster) {
+    return "[" + nonPrintingCluster.length + "]";
+}
+
 /**
  * given a linearVisual metadata log, produce a string for console printing, decorated with nonprinted cluster markers
  */
 var linearVisualDecoratedString = function(data) {
-    return linearVisualNonprinted2(data)
+    return linearVisualNonprinted2(
+            data,
+            function(cluster) {
+                return nonPrintingClusterMarker(cluster).length;
+            })
         .reduce(function(output, datum, printLocation) {
-            var marker = "[" + datum.length + "]";
+            var marker = nonPrintingClusterMarker(datum);
             return output.slice(0,printLocation) + marker + output.slice(printLocation + marker.length);
         }, linearVisualString(data));
 }
