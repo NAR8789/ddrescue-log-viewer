@@ -11,14 +11,15 @@ var linearVisual = function(log, granules) {
     for (i = 0; i < entries.length ;i++) {
         var entry = entries[i];
         var entryPrinted = false;
+        var entryString = "";
         while (samplePos < entry.begin) {
-            logString += "w";
+            entryString += "w";
             samplePos += step;
             entryPrinted = true;
         }
         var end = entry.begin + entry.size
         while (samplePos < end) {
-            logString += entry.flag;
+            entryString += entry.flag;
             samplePos += step;
             entryPrinted = true;
         }
@@ -27,12 +28,14 @@ var linearVisual = function(log, granules) {
             nonPrintedEntries += 1;
         } else {
             if (nonPrintedEntries > 0) {
-                logString += "[" + nonPrintedEntries + "]";
+                entryString = "[" + nonPrintedEntries + "]" + entryString;
             } else {
-                logString += ",";
+                entryString = "," + entryString;
             }
             nonPrintedEntries = 0;
         }
+
+        logString += entryString;
     }
 
     return logString;
