@@ -1,19 +1,13 @@
 #!/usr/bin/nodejs
 
-var fs = require('fs');
+var commandWrapper = require('./commandWrapper');
 var filesize = require('file-size');
-var logParser = require('./logParser');
 var viewBuilder = require('./viewBuilder');
 
 var rows = process.argv[5] || Math.floor(process.stdout.rows/2);
 var granules = rows * process.stdout.columns;
 
-fs.readFile(process.argv[2], 'utf8', function(err, data) {
-    if (err) {
-        return console.log(err);
-    }
-
-    var log = logParser.readString(data);
+commandWrapper.command(function(log) {
     var logEntries = log.entries;
     var totalSize = log.totalSize;
 
