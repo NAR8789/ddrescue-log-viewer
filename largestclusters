@@ -8,8 +8,8 @@ commandWrapper.command(function(log) {
     var logEntries = log.entries;
 
     var GiB = 1024 * 1024 * 1024;
-    var begin = process.argv[3] * GiB;
-    var end = process.argv[4] * GiB;
+    var begin = process.argv[3] ? process.argv[3] * GiB : 0;
+    var end = process.argv[4] ? process.argv[4] * GiB : log.totalSize;
 
     logEntries
         .filter(function(entry) {
