@@ -1,7 +1,9 @@
 #!/usr/bin/nodejs
 
 var fs = require('fs');
+var filesize = require('file-size');
 var logParser = require('./logParser');
+var viewbuilder = require('./viewBuilder');
 
 fs.readFile(process.argv[2], 'utf8', function(err, data) {
     if (err) {
@@ -23,6 +25,6 @@ fs.readFile(process.argv[2], 'utf8', function(err, data) {
             return right.size - left.size || left.begin - right.begin;
         })
         .forEach(function(entry) {
-            console.log(entry.raw);
+            console.log(entry.raw, viewbuilder.regionSpec(entry), filesize(entry.begin).human(), filesize(entry.size).human());
         });
 });

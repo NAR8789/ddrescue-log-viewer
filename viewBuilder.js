@@ -155,17 +155,29 @@ var nonPrintingClusterMarker = function(nonPrintingCluster) {
     return "[" + nonPrintingCluster.length + "]";
 }
 
+var nonPrintingClusterBadSize = function(nonPrintingCluster) {
+    var badSize = nonPrintingCluster
+        .filter(function(cluster) {
+            return cluster.flag() !== "+";
+        })
+        .reduce(function(badSize, cluster) {
+            return badSize + cluster.logEntry.size;
+        }, 0);
+    return "[" + filesize(badSize).human() + "]";
+}
+
 /**
  * given a linearVisual metadata log, produce a string for console printing, decorated with nonprinted cluster markers
  */
 var linearVisualDecoratedString = function(data) {
+    var nonPrintingMarker = nonPrintingClusterBadSize;
     return linearVisualNonprinted2(
             data,
             function(cluster) {
-                return nonPrintingClusterMarker(cluster).length;
+                return nonPrintingMarker(cluster).length;
             })
         .reduce(function(output, datum, printLocation) {
-            var marker = nonPrintingClusterMarker(datum);
+            var marker = nonPrintingMarker(datum);
             return output.slice(0,printLocation) + marker + output.slice(printLocation + marker.length);
         }, linearVisualString(data));
 }
@@ -204,6 +216,11 @@ var sizeSummary = function(log) {
     }, {});
 };
 
+var regionSpec = function(logEntry) {
+    return "-i 0x" + logEntry.begin.toString(16).toUpperCase() + " -s 0x" + logEntry.size.toString(16).toUpperCase();
+}
+
 module.exports.linearVisual = linearVisual;
 module.exports.sizeSummary = sizeSummary;
 module.exports.legendLine = legendLine;
+module.exports.regionSpec = regionSpec;
