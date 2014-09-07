@@ -5,7 +5,7 @@ var filesize = require('file-size');
 var logParser = require('./logParser');
 var viewBuilder = require('./viewBuilder');
 
-var rows = process.argv[3] || Math.floor(process.stdout.rows/2);
+var rows = process.argv[5] || Math.floor(process.stdout.rows/2);
 var granules = rows * process.stdout.columns;
 
 fs.readFile(process.argv[2], 'utf8', function(err, data) {
@@ -19,8 +19,11 @@ fs.readFile(process.argv[2], 'utf8', function(err, data) {
 
     var sizeBreakdown = viewBuilder.sizeSummary(log);
 
-    var logString = viewBuilder.linearVisual(log, granules);
-    var step = totalSize/granules;
+    var min = process.argv[3] ? process.argv[3] * 1024 * 1024 * 1024 : 0;
+    var max = process.argv[4] ? process.argv[4] * 1024 * 1024 * 1024 : totalSize;
+
+    var logString = viewBuilder.linearVisual(log, granules, min, max);
+    var step = (max - min)/granules;
 
     console.log("granule size:\t" + filesize(step).human());
     console.log("row size:\t" + filesize(step * process.stdout.columns).human());

@@ -38,38 +38,41 @@ var linearVisualMetadata = (function() {
         return entry;
     };
 
-    return function(log, granules) {
+    return function(log, granules, min, max) {
         var logEntries = log.entries;
-        var totalSize = log.totalSize;
+        var totalSize = max - min;
 
         var granulePos = 0;
         // we calculate samplePos from granulePos, in order to avoid float error
         var samplePos = function() {
-            return (granulePos / granules) * totalSize;
+            return (granulePos / granules) * totalSize + min;
         };
         var metadata = [];
-        for (i = 0; i < logEntries.length ;i++) {
-            var logEntry = logEntries[i];
+        logEntries
+            .filter(function(logEntry) {
+                return (logEntry.begin >= min && logEntry.begin <= max) ||
+                    (logEntry.begin + logEntry.size >= min && logEntry.begin + logEntry.size <= max);
+            })
+            .forEach(function(logEntry) {
+                // handle gaps in the logfile
+                var entry = buildEntry(granulePos);
+                while (samplePos() < logEntry.begin) {
+                    granulePos += 1;
+                    entry.printLength += 1;
+                }
+                if (entry.printed()) {
+                    metadata.push(entry);
+                }
 
-            // handle gaps in the logfile
-            var entry = buildEntry(granulePos);
-            while (samplePos() < logEntry.begin) {
-                granulePos += 1;
-                entry.printLength += 1;
-            }
-            if (entry.printed()) {
+                // handle the meat of the logEntry
+                entry = buildEntry(granulePos, logEntry);
+                var end = Math.min(logEntry.begin + logEntry.size, max);
+                while (samplePos() < end) {
+                    granulePos += 1;
+                    entry.printLength += 1;
+                }
                 metadata.push(entry);
-            }
-
-            // handle the meat of the logEntry
-            entry = buildEntry(granulePos, logEntry);
-            var end = logEntry.begin + logEntry.size
-            while (samplePos() < end) {
-                granulePos += 1;
-                entry.printLength += 1;
-            }
-            metadata.push(entry);
-        }
+            });
 
         return metadata;
     };
@@ -185,8 +188,8 @@ var linearVisualDecoratedString = function(data) {
 /**
  * Given a linearVisual metadata log, print it to console
  */
-var linearVisual = function(log, granules) {
-    return linearVisualDecoratedString(linearVisualMetadata(log, granules));
+var linearVisual = function(log, granules, min, max) {
+    return linearVisualDecoratedString(linearVisualMetadata(log, granules, min, max));
 };
 
 var legendLine = function(step) {
