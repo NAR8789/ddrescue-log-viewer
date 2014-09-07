@@ -1,0 +1,30 @@
+#!/usr/bin/nodejs
+
+var commandWrapper = require("./commandWrapper");
+
+var sectorSize = 512;
+
+commandWrapper.command(function(log) {
+    log.entries.filter(function(entry) {
+        return entry.flag === '-';
+    })
+    .map(function(entry) {
+        var sectors = [];
+        var sectorPosition = Math.floor(entry.begin/sectorSize);
+        var bytePosition = function() {
+            return sectorPosition * sectorSize;
+        }
+        var endBytePosition = entry.begin + entry.size;
+        while( bytePosition() < endBytePosition ) {
+            sectors.push(sectorPosition);
+            sectorPosition += 1;
+        }
+        return sectors;
+    })
+    .reduce(function(sectors, next) {
+        return sectors.concat(next);
+    }, [])
+    .forEach(function(sector) {
+        console.log(sector);
+    });
+});
